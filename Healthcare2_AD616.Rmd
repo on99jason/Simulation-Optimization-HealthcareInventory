@@ -71,7 +71,6 @@ gown_lead <- function(){
 glove_lead <- function(){
   runif(1, 2, 4) %>% ceiling()
 }
-
 ```
 
 # Inventory Control Simulation 
@@ -84,9 +83,9 @@ glove_lead <- function(){
 
 ```{r}
 # est. avg. mask demand/day = 43
-ceiling(mean(MGH$covid_cases)) + 6 + 4
+ceiling(mean(MGH$covid_cases)) + 6 + 4 
 
-sim <- function(r_point, r_qty){
+sim1 <- function(r_point, r_qty){
   v_inv_level <- c()
   v_satisfaction_rate <- c()
   # return average inventory level from simulations
@@ -133,8 +132,6 @@ sim <- function(r_point, r_qty){
   #plot(e_inv, type = "b")+abline(h=r_point)
   return(c(mean(v_inv_level), mean(v_satisfaction_rate)))
 }
-
-sim(205, 184)
 ```
 
 
@@ -148,22 +145,25 @@ library(DEoptim)
 opt_func <- function(params){
   r_point <- params[1] %>% round()
   r_qty <- params[2] %>% round()
-  res <- sim(r_point, r_qty)
+  res <- sim1(r_point, r_qty)
   if(res[2]<0.98)
     return(Inf)
   return(res[1])
 }
 
-opt_satisfaction_rate <- DEoptim(opt_func, lower = c(172,86), upper = c(700,350))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
+set.seed(616)
+opt_satisfaction_rate <- DEoptim(opt_func, lower = c(100,100), upper = c(1000,1000))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
 opt_satisfaction_rate$optim 
+
+sim1(202.5326, 181.4824)
 ```
 
-### For Mask inventory management, the optimal r_point is 205, and the optimal r_qty is 184. 
+### For Mask inventory management, the optimal reorder point is 203, and the optimal reorder quantity is 182 (rounded) 
 
 ## Gown Simulation 
 
 ```{r}
-sim <- function(r_point, r_qty){
+sim2 <- function(r_point, r_qty){
   v_inv_level <- c()
   v_satisfaction_rate <- c()
   for(n in 1:50){
@@ -205,6 +205,92 @@ sim <- function(r_point, r_qty){
 }
 ```
 
+## Gown Optimization 
+
+```{r}
+opt_func <- function(params){
+  r_point <- params[1] %>% round()
+  r_qty <- params[2] %>% round()
+  res <- sim2(r_point, r_qty)
+  if(res[2]<0.98)
+    return(Inf)
+  return(res[1])
+}
+
+set.seed(616)
+opt_satisfaction_rate <- DEoptim(opt_func, lower = c(100,100), upper = c(1000,1000))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
+opt_satisfaction_rate$optim 
+
+sim2(377.8645, 315.8100)
+```
+
+### For Gown inventory management, the optimal reorder point is 378, and the optimal reorder quantity is 316 (rounded) 
 
 
+
+## Glove Simulation 
+
+```{r}
+sim3 <- function(r_point, r_qty){
+  v_inv_level <- c()
+  v_satisfaction_rate <- c()
+  for(n in 1:50){
+    b_inv <- rep(0, 60)
+    e_inv <- rep(0, 60)
+    r_ind <- rep(0, 60)
+    b_inv[1] <- (33*4+36+8)*7     # b_inv is set to 7 days of avg inventory for Glove  
+    total_demands <- 0
+    satisfied_demands <- 0
+    for(i in 1:60){
+      if(r_ind[i]==1){
+        b_inv[i] <- b_inv[i] + r_qty
+      }
+      demand <- sample_patient()*4 + 36 + 8     # change to Glove demand here
+      total_demands <- total_demands + demand
+      if(b_inv[i]<demand){
+        e_inv[i] <- 0
+        satisfied_demands <- satisfied_demands + b_inv[i]
+      }
+      else{
+        e_inv[i] <- b_inv[i]-demand
+        satisfied_demands <- satisfied_demands + demand
+      }
+      cond1 <- (e_inv[i] < r_point)
+      cond2 <- sum(r_ind[(i+1):length(r_ind)], na.rm=T)==0
+      if(cond1 & cond2){
+        lead <- glove_lead()       # change to gown lead_time here
+        r_ind[i+1+lead] <- 1
+      }
+      b_inv[i+1] <- e_inv[i]
+    }
+    a_inv_level <- mean(e_inv)
+    satisfaction_rate <- satisfied_demands/total_demands
+    v_inv_level <- c(v_inv_level, a_inv_level)
+    v_satisfaction_rate <- c(v_satisfaction_rate, satisfaction_rate)
+  }
+  #plot(e_inv, type = "b")+abline(h=r_point)
+  return(c(mean(v_inv_level), mean(v_satisfaction_rate)))
+}
+```
+
+## Glove Optimization 
+
+```{r}
+opt_func <- function(params){
+  r_point <- params[1] %>% round()
+  r_qty <- params[2] %>% round()
+  res <- sim3(r_point, r_qty)
+  if(res[2]<0.98)
+    return(Inf)
+  return(res[1])
+}
+
+set.seed(616)
+opt_satisfaction_rate <- DEoptim(opt_func, lower = c(700,700), upper = c(2000,2000))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
+opt_satisfaction_rate$optim 
+
+sim3(988.1699, 846.5179)
+```
+
+### For Glove inventory management, the optimal reorder point is 989, and the optimal reorder quantity is 847. (rounded) 
 
