@@ -1,0 +1,34 @@
+更新现况：
+
+目标：库存管理 
+            通过调整reorder_point和reorder_quantity
+            满足率在98%以上的情况下  尽可能降低平均库存数 
+
+数据库：马萨诸塞州总医院 过去两年接收的covid住院病人数量        uncertainty!!!!
+               （已经找到了最接近的distribution是lognormal分布，将用rlnorm来模拟住院病人的数量）
+
+每天病人的PPE消耗为：
+Masks  = 1/patient/day    + 6 + 4   
+Gowns = 1/patient/day    + 6 + 4
+Gloves = 4/patient/day    + 36 + 8 
+(后面加的是护士和医生的消耗，排班人数并不会跟着病人数量随机）
+
+PPE的lead time：（如论文所讲）
+Mask_lead  = triangular(1,4,1)
+Gown_lead = runif(4,7)
+Glove_lead = runif(2,4)
+
+每类PPE都要各自simulate和optimize，各自的期初的库存设为=平均病人人数*7天的PPE消耗
+平均33个病人/天
+
+Mask b_inv: 33*1 + 6 + 4
+Gown b_inv: 33*4 + 6 + 4
+Glove b_inv: 33*1 + 6 + 4
+
+
+我现在在optimization这一步，我应该将lower的组合和upper的组合设为多少？
+组合（r_point, r_qty）
+
+
+
+
