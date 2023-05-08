@@ -88,13 +88,13 @@ ceiling(mean(MGH$covid_cases)) + 6 + 4
 
 sim <- function(r_point, r_qty){
   v_inv_level <- c()
-  v_service_level <- c()
+  v_satisfaction_rate <- c()
   # return average inventory level from simulations
   for(n in 1:50){        # simulate 50 times
     b_inv <- rep(0, 60)
     e_inv <- rep(0, 60)
     r_ind <- rep(0, 60)
-    b_inv[1] <- 43*7    # b_inv is set to 7 days of avg inventory. 
+    b_inv[1] <- 43*7    # b_inv is set to 7 days of avg inventory for Mask. 
     total_demands <- 0
     satisfied_demands <- 0
     for(i in 1:60){
@@ -126,12 +126,12 @@ sim <- function(r_point, r_qty){
     }
     # average inventory level, service level
     a_inv_level <- mean(e_inv)
-    service_level <- satisfied_demands/total_demands
+    satisfaction_rate <- satisfied_demands/total_demands
     v_inv_level <- c(v_inv_level, a_inv_level)
-    v_service_level <- c(v_service_level, service_level)
+    v_satisfaction_rate <- c(v_satisfaction_rate, satisfaction_rate)
   }
   #plot(e_inv, type = "b")+abline(h=r_point)
-  return(c(mean(v_inv_level), mean(v_service_level)))
+  return(c(mean(v_inv_level), mean(v_satisfaction_rate)))
 }
 
 sim(205, 184)
@@ -154,8 +154,8 @@ opt_func <- function(params){
   return(res[1])
 }
 
-opt_service_level <- DEoptim(opt_func, lower = c(172,86), upper = c(700,350))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
-opt_service_level$optim 
+opt_satisfaction_rate <- DEoptim(opt_func, lower = c(172,86), upper = c(700,350))  # Find the lowest inv_level, with the an service level cannot lower than 98%.  
+opt_satisfaction_rate$optim 
 ```
 
 ### For Mask inventory management, the optimal r_point is 205, and the optimal r_qty is 184. 
@@ -163,7 +163,46 @@ opt_service_level$optim
 ## Gown Simulation 
 
 ```{r}
-
+sim <- function(r_point, r_qty){
+  v_inv_level <- c()
+  v_satisfaction_rate <- c()
+  for(n in 1:50){
+    b_inv <- rep(0, 60)
+    e_inv <- rep(0, 60)
+    r_ind <- rep(0, 60)
+    b_inv[1] <- 43*10     # b_inv is set to 10 days of avg inventory for Gown.  
+    total_demands <- 0
+    satisfied_demands <- 0
+    for(i in 1:60){
+      if(r_ind[i]==1){
+        b_inv[i] <- b_inv[i] + r_qty
+      }
+      demand <- sample_patient()*1 + 6 + 4     # change to gown demand here
+      total_demands <- total_demands + demand
+      if(b_inv[i]<demand){
+        e_inv[i] <- 0
+        satisfied_demands <- satisfied_demands + b_inv[i]
+      }
+      else{
+        e_inv[i] <- b_inv[i]-demand
+        satisfied_demands <- satisfied_demands + demand
+      }
+      cond1 <- (e_inv[i] < r_point)
+      cond2 <- sum(r_ind[(i+1):length(r_ind)], na.rm=T)==0
+      if(cond1 & cond2){
+        lead <- gown_lead()       # change to gown lead_time here
+        r_ind[i+1+lead] <- 1
+      }
+      b_inv[i+1] <- e_inv[i]
+    }
+    a_inv_level <- mean(e_inv)
+    satisfaction_rate <- satisfied_demands/total_demands
+    v_inv_level <- c(v_inv_level, a_inv_level)
+    v_satisfaction_rate <- c(v_satisfaction_rate, satisfaction_rate)
+  }
+  #plot(e_inv, type = "b")+abline(h=r_point)
+  return(c(mean(v_inv_level), mean(v_satisfaction_rate)))
+}
 ```
 
 
