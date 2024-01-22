@@ -1,5 +1,5 @@
 # Simulation-Optimization-HealthcareInventory
-Github Page: https://on99genius.github.io/Simulation-Optimization-HealthcareInventory/
+Github Page (R markdown file): https://on99genius.github.io/Simulation-Optimization-HealthcareInventory/
 
 ## Introduction
 Due to the lack of appropriate preparedness and response plans, many healthcare providers in the US experienced a severe shortage of Personal Protective Equipment (PPE) during the COVID-19 pandemic. Inadequate PPE threatens the safety of frontline medical staff and negatively impacts the quality of care. The level of preparedness to combat unprecedented outbreaks directly depends on proactive planning, strategic thinking, and demand forecasting. 
